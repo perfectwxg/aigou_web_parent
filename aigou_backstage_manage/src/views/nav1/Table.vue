@@ -175,6 +175,7 @@
 				//NProgress.start();
 				getUserListPage(para).then((res) => {
 					this.total = res.data.total;
+					console.log(this.total);
 					this.users = res.data.users;
 					this.listLoading = false;
 					//NProgress.done();

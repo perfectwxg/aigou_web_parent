@@ -10,10 +10,10 @@ import Vuex from 'vuex'
 //import NProgress from 'nprogress'
 //import 'nprogress/nprogress.css'
 import routes from './routes'
-import Mock from './mock'
-Mock.bootstrap();
+// import Mock from './mock'
+var axios = require('axios')
+// Mock.bootstrap();
 import 'font-awesome/css/font-awesome.min.css'
-
 Vue.use(ElementUI)
 Vue.use(VueRouter)
 Vue.use(Vuex)
@@ -24,6 +24,9 @@ const router = new VueRouter({
   routes
 })
 
+axios.defaults.baseURL="http://localhost:9988/services"
+Vue.prototype.$http=axios;
+Vue.config.productionTip = false
 router.beforeEach((to, from, next) => {
   //NProgress.start();
   if (to.path == '/login') {
