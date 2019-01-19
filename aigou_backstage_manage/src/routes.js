@@ -10,6 +10,10 @@ import Page5 from './views/nav2/Page5.vue'
 import Page6 from './views/nav3/Page6.vue'
 import echarts from './views/charts/echarts.vue'
 import BrandTable from './views/product/brandTable.vue'
+import ProductType from './views/product/productType.vue'
+import Product from './views/product/product.vue'
+import specification from './views/product/specification.vue'
+import typeTemplate from './views/product/specification2.vue'
 
 let routes = [
     {
@@ -42,9 +46,10 @@ let routes = [
         iconCls: 'el-icon-message',//图标样式class
         children: [
             { path: '/brand', component: BrandTable, name: '品牌管理'},
-            { path: '/p_type', component: Table, name: '类型管理' },
-            { path: '/product', component: Form, name: '商品管理' },
-            { path: '/user', component: user, name: '列表' },
+            { path: '/p_type', component: ProductType, name: '类型管理' },
+            { path: '/product', component: Product, name: '商品管理' },
+            { path: '/specification', component: specification, name: '属性管理' },
+            { path: '/typeTemplate', component: typeTemplate, name: '模板管理' }
         ]
     },
     {

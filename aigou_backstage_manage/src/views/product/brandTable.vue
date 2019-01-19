@@ -4,7 +4,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.keyword" placeholder="关键字"></el-input>
+                    <el-input v-model="filters.keyword" placeholder="关键字" clearable></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" v-on:click="getBrandPages">查询</el-button>
@@ -17,6 +17,7 @@
 
         <!--列表-->
         <el-table :data="brands" highlight-current-row v-loading="listLoading" @selection-change="selsChange"
+                  :row-class-name="tableRowClassName"
                   style="width: 100%;">
             <el-table-column type="selection" width="55">
             </el-table-column>
@@ -37,7 +38,7 @@
             <el-table-column prop="logo" label="LOGO" min-width="180">
             </el-table-column>
             <el-table-column label="操作" width="150">
-                <template scope="scope">
+                <template slot-scope="scope">
                     <el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>
                 </template>
@@ -53,7 +54,7 @@
         </el-col>
 
         <!--编辑界面-->
-        <el-dialog title="编辑" v-model="editFormVisible" :close-on-click-modal="false">
+        <el-dialog title="编辑" :visible.sync="editFormVisible" v-model="editFormVisible" :close-on-click-modal="false">
             <el-form :model="editForm" label-width="80px" :rules="editFormRules" ref="editForm">
                 <el-form-item label="品牌名称" prop="name">
                     <el-input v-model="editForm.name" auto-complete="off"></el-input>
@@ -70,8 +71,21 @@
                             :options="productTypes"
                             @change="setProductTypeID2"
                             v-model="selectType"
-                            style="width: 75%">
+                            style="width: 100%">
                     </el-cascader>
+                </el-form-item>
+                <el-form-item label="品牌LOGO" v-model="editForm.logo">
+                    <el-upload
+                            class="upload-demo"
+                            action="http://localhost:9988/services/common/upload"
+                            :on-preview="handlePreview"
+                            :on-remove="handleRemove"
+                            :on-success="handleLogoSave2"
+                            :file-list="fileList2"
+                            list-type="picture">
+                        <el-button size="small" type="primary">点击上传</el-button>
+                        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+                    </el-upload>
                 </el-form-item>
                 <el-form-item label="品牌描述">
                     <el-input v-model="editForm.description" auto-complete="off"></el-input>
@@ -84,7 +98,7 @@
         </el-dialog>
 
         <!--新增界面-->
-        <el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
+        <el-dialog title="新增" :visible.sync="addFormVisible" v-model="addFormVisible" :close-on-click-modal="false">
             <el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
                 <el-form-item label="品牌名称" prop="name">
                     <el-input v-model="addForm.name" auto-complete="off"></el-input>
@@ -104,29 +118,22 @@
                             style="width: 75%">
                     </el-cascader>
                 </el-form-item>
+                <el-form-item label="品牌LOGO" v-model="addForm.logo">
+                    <el-upload
+                            class="upload-demo"
+                            action="http://localhost:9988/services/common/upload"
+                            :on-preview="handlePreview"
+                            :on-remove="handleRemove"
+                            :on-success="handleLogoSave"
+                            :file-list="fileList2"
+                            list-type="picture">
+                        <el-button size="small" type="primary">点击上传</el-button>
+                        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+                    </el-upload>
+                </el-form-item>
                 <el-form-item label="品牌描述">
                     <el-input v-model="addForm.description" auto-complete="off"></el-input>
                 </el-form-item>
-                <!--<el-form-item>-->
-                    <!--<el-upload action="/product/brand/imgUpload"-->
-                    <!--list-type="picture-card"-->
-                    <!--accept="image/*"-->
-                    <!--:limit="imgLimit"-->
-                    <!--:file-list="productImgs"-->
-                    <!--:multiple="isMultiple"-->
-                    <!--:on-preview="handlePictureCardPreview"-->
-                    <!--:on-remove="handleRemove"-->
-                    <!--:on-success="handleAvatarSuccess"-->
-                    <!--:before-upload="beforeAvatarUpload"-->
-                    <!--:on-exceed="handleExceed"-->
-                    <!--:on-error="imgUploadError">-->
-                    <!--<i class="el-icon-plus"></i>-->
-                    <!--</el-upload>-->
-                    <!--<el-dialog :visible.sync="dialogVisible">-->
-                        <!--<img width="100%" :src="dialogImageUrl" alt="">-->
-                    <!--</el-dialog>-->
-
-                <!--</el-form-item>-->
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click.native="addFormVisible = false">取消</el-button>
@@ -145,11 +152,11 @@
         data: function () {
             return {
                 dialogImageUrl: '',
+                fileList2: [],
                 dialogVisible: false,
-                productImgs: [],
                 isMultiple: true,
                 imgLimit: 1,
-                imageUrl:'',
+                imageUrl: '',
                 filters: {
                     keyword: ''
                 },
@@ -176,8 +183,8 @@
                     firstLetter: '',
                     description: '',
                     productTypeId: '',
-                    productType:{},
-                    logo:''
+                    productType: {},
+                    logo: ''
                 },
                 addFormVisible: false,//新增界面是否显示
                 addLoading: false,
@@ -194,29 +201,62 @@
                     firstLetter: '',
                     description: '',
                     productTypeId: '',
-                    logo:'',
+                    logo: '',
                 }
 
             }
         },
         methods: {
-            setBrandType:function () {
-              let t  =document.getElementById("#brandType");
-              console.log(t);
+            handleLogoSave: function (response, file, fileList) {
+                let temp=[];
+                temp.push(
+                    {
+                        "name":file.name,
+                        "url":response.resultObj
+                    }
+                )
+                this.addForm.logo = JSON.stringify(temp);
             },
-            handleRemove(file, fileList) {//移除图片
-                console.log(file, fileList);
+            handleLogoSave2: function (response, file, fileList) {
+                let temp=[];
+                temp.push(
+                    {
+                        "name":file.name,
+                        "url":response.resultObj
+                    }
+                )
+                this.editForm.log(response)
             },
-            handlePictureCardPreview(file) {//预览图片时调用
+            handleRemove(file, fileList) {
                 console.log(file);
-                this.dialogImageUrl = file.url;
-                this.dialogVisible = true;
+                let filePath = this.editForm.logo;
+                this.$http.delete("/common/del?filePath=" + filePath)
+                    .then(res => {
+                        if (res.data.success) {
+                            this.$message({
+                                message: '移除成功!',
+                                type: 'success'
+                            });
+                        } else {
+                            this.$message({
+                                message: '移除失败!',
+                                type: 'error'
+                            });
+                        }
+                    })
             },
-            setProductTypeID:function (value) {
-              this.addForm.productTypeId=value[value.length-1];
+            handlePreview(file) {
+                console.log(file);
             },
-            setProductTypeID2:function (value) {
-                this.editForm.productTypeId=value[value.length-1]
+            setBrandType: function () {
+                let t = document.getElementById("#brandType");
+                console.log(t);
+            },
+            setProductTypeID: function (value) {
+                this.addForm.productTypeId = value[value.length - 1];
+            },
+            setProductTypeID2: function (value) {
+                this.editForm.productTypeId = value[value.length - 1]
             },
 
             beforeAvatarUpload(file) {//文件上传之前调用做一些拦截限制
@@ -242,7 +282,7 @@
                 this.$message.error('上传图片不能超过6张!');
                 console.log(file, fileList);
             },
-            imgUploadError(err, file, fileList){//图片上传失败调用
+            imgUploadError(err, file, fileList) {//图片上传失败调用
                 console.log(err)
                 this.$message.error('上传图片失败!');
             },
@@ -263,7 +303,6 @@
                 console.debug(para);
                 getBrandPage(para).then(({data}) => {
                     this.total = data.total;
-                    console.log(this.total);
                     this.brands = data.lists;
                     this.listLoading = false;
                     //NProgress.done();
@@ -292,7 +331,21 @@
             },
             //显示编辑界面
             handleEdit: function (index, row) {
+                this.fileList2=[];
                 this.editFormVisible = true;
+                //回显示logo
+                this.fileList2.push(
+                    {
+                        "url": "http://47.106.74.129/" + JSON.parse(row.logo)[0].url,
+                        "name":JSON.parse(row.logo)[0].name
+                    });
+                //获取原类型字符串回显
+                let type_str = row.productType.path;
+                let type_arr = type_str.split('.');
+                //解析为双向绑定数据
+                for (let i = 1; i < type_arr.length - 1; i++) {
+                    this.selectType[i - 1] = parseInt(type_arr[i]);
+                }
                 this.editForm = Object.assign({}, row);
             },
             //获取品牌类型
@@ -316,6 +369,7 @@
                             this.editLoading = true;
                             //NProgress.start();
                             let para = Object.assign({}, this.editForm);
+                            console.log(para);
                             para.updateTime = new Date();
                             editBrand(para).then((res) => {
                                 this.editLoading = false;
@@ -400,6 +454,15 @@
                 this.$http.get('/product/productType/getParentProductType').then(res => {
                     this.options = res.data;
                 })
+            },
+            // 筛选变色
+            tableRowClassName({row, rowIndex}) {
+                if (row.name.search(this.filters.keyword) > 0) {
+                    return 'warning-row';
+                } else if (row.englishName.search(this.filters.keyword) > 0) {
+                    return 'warning-row';
+                }
+                return '';
             }
         },
         mounted() {
@@ -424,7 +487,13 @@
 </script>
 
 <style scoped>
+    .el-table .warning-row {
+        background: oldlace;
+    }
 
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
 </style>
 
 
