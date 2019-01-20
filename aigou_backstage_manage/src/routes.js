@@ -48,7 +48,7 @@ let routes = [
             { path: '/brand', component: BrandTable, name: '品牌管理'},
             { path: '/p_type', component: ProductType, name: '类型管理' },
             { path: '/product', component: Product, name: '商品管理' },
-            { path: '/specification', component: specification, name: '属性管理' },
+            { path: '/specification', component: specification, name: '商品类型属性管理' },
             { path: '/typeTemplate', component: typeTemplate, name: '模板管理' }
         ]
     },

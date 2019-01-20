@@ -157,13 +157,24 @@
             <el-card class="box-card">
                 <div v-for="property in skuProperties">
                         <div v-for="i in property.skuValue.length+1" :key="i">
-                    <el-col :span="5"><span style="font-size: 15px">{{property.name}}</span><div class="grid-content bg-purple"></div></el-col>
+                    <el-col :span="3"><span style="font-size: 15px">{{property.name}}</span><div class="grid-content bg-purple"></div></el-col>
                             <el-input style="width: 60%;margin-top: 7px" v-model="property.skuValue[i-1]" auto-complete="off"></el-input>
                             <el-button type="danger" @click="property.skuValue.splice(i-1,1)" icon="el-icon-delete" plain>删除</el-button>
                             <div class="grid-content bg-purple"></div>
                         </div>
                 </div>
             </el-card>
+            <el-table
+                    :data="data_list"
+                    style="width: 100%">
+                <el-table-column
+                        v-for="(col,i) in this.tableHeaders"
+                        :prop="col"
+                        :label="col"
+                        width="100%">
+                </el-table-column>
+
+            </el-table>
             <div slot="footer" class="dialog-footer">
                 <el-button @click.native="viewPropertiesFormVisible = false">取消</el-button>
                 <el-button type="primary" @click.native="viewPropertiesSubmit" :loading="editLoading">提交</el-button>
@@ -290,6 +301,36 @@
                 return this.$refs.myQuillEditor.quill;
             },
         },
+        watch:{
+            skuProperties:{
+                //[{[]}]
+                //注意：当观察的数据为对象或数组时，curVal和oldVal是相等的，因为这两个形参指向的是同一个数据对象
+                handler(curVal,oldVal){
+                    // 过滤掉用户没有填写数据的规格参数
+                    const arr = this.skuProperties.filter(s => s.skuValue.length > 0);
+                    // 通过reduce进行累加笛卡尔积
+                    var skus =  arr.reduce((last, spec) => {
+                        const result = [];
+                        last.forEach(o => {
+                            spec.skuValue.forEach(option => {
+                                // option //一个一一个值
+                                const obj = {};
+                                Object.assign(obj, o);
+                                obj[spec.name] = option;
+                                result.push(obj);
+                            })
+                        })
+                        return result
+                    }, [{}]);
+                    //设置表格数据
+                    this.data_list = skus;
+                    //获取表头
+                    this.tableHeaders = Object.keys(skus[0]);
+
+                },
+                deep:true
+            }
+        },
         data: function () {
             return {
                 viewPropertiesFormVisible:false,
@@ -297,8 +338,10 @@
                 currentRow:[],
                 viewProperties:[],
                 skuProperties:[],
+                data_list:[],
                 editorOption:{},
                 brandOptions:[],
+                tableHeaders:[],
                 dialogImageUrl: '',
                 dialogVisible: false,
                 productImgs: [],
